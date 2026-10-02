@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Video</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="2.5"/>
+        <path d="m10 8 6 4-6 4V8z" fill="currentColor" stroke="none"/>
+      </svg>
+      <span>Editor de Video</span>
+    </div>
+    <div class="badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+      FFmpeg nativo
+    </div>
+  </header>
+
+  <main>
+    <!-- Panel izquierdo: Importar + Lista -->
+    <section class="panel panel-clips">
+      <div class="panel-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <h2>Importar clips</h2>
+      </div>
+
+      <label for="fileInput" class="dropzone" id="dropzone">
+        <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <strong>Arrastra tus videos aquí</strong>
+        <span>o haz clic para seleccionar</span>
+        <small>MP4, MOV, AVI, MKV, WEBM</small>
+      </label>
+      <input type="file" id="fileInput" accept="video/*" multiple hidden>
+
+      <div class="panel-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        <h2>Línea de tiempo</h2>
+        <span class="hint">Arrastra para reordenar</span>
+      </div>
+
+      <ul id="listaClips" class="lista-clips"></ul>
+
+      <div class="empty-state" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="6" width="14" height="12" rx="2"/>
+          <path d="m22 8-6 4 6 4V8z"/>
+        </svg>
+        <p>Aún no has añadido clips</p>
+      </div>
+    </section>
+
+    <!-- Panel derecho: Opciones + Preview -->
+    <section class="panel panel-output">
+      <div class="panel-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <h2>Configuración</h2>
+      </div>
+
+      <div class="opciones">
+        <label class="field">
+          <span>Resolución de salida</span>
+          <select id="resolucion">
+            <option value="1920x1080">1920 × 1080 · Full HD</option>
+            <option value="1280x720" selected>1280 × 720 · HD</option>
+            <option value="854x480">854 × 480 · SD</option>
+            <option value="640x360">640 × 360 · Baja</option>
+          </select>
+        </label>
+      </div>
+
+      <button id="btnUnir" disabled class="btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m10 8 6 4-6 4V8z" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <span>Unir y Exportar</span>
+      </button>
+
+      <div class="progreso-container" id="progresoContainer" hidden>
+        <div class="progreso-info">
+          <span id="estado">Preparando...</span>
+          <span id="porcentaje">0%</span>
+        </div>
+        <div class="barra-progreso">
+          <div class="barra-fill" id="barraFill"></div>
+        </div>
+      </div>
+
+      <div class="panel-header" style="margin-top:1.5rem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m22 8-6 4 6 4V8z"/>
+          <rect x="2" y="6" width="14" height="12" rx="2"/>
+        </svg>
+        <h2>Previsualización</h2>
+      </div>
+
+      <div class="preview-wrapper">
+        <video id="preview" controls></video>
+        <div class="preview-empty" id="previewEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"/>
+            <rect x="1" y="5" width="15" height="14" rx="2"/>
+          </svg>
+          <p>Sin previsualización</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
