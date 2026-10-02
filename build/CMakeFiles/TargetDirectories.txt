@@ -1,0 +1,5 @@
+/home/sz/Escritorio/grabadora de pantalla /camara-app/build/CMakeFiles/camara.dir
+/home/sz/Escritorio/grabadora de pantalla /camara-app/build/CMakeFiles/edit_cache.dir
+/home/sz/Escritorio/grabadora de pantalla /camara-app/build/CMakeFiles/rebuild_cache.dir
+/home/sz/Escritorio/grabadora de pantalla /camara-app/build/CMakeFiles/camara_autogen_timestamp_deps.dir
+/home/sz/Escritorio/grabadora de pantalla /camara-app/build/CMakeFiles/camara_autogen.dir

@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Grabadora de pantalla</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #0a58ca;
+    --primary-dark: #084298;
+    --primary-light: #e7f1ff;
+    --danger: #dc3545;
+    --success: #198754;
+    --warning: #ffc107;
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .icon { display: inline-flex; align-items: center; justify-content: center; }
+  .icon svg { width: 1em; height: 1em; fill: currentColor; }
+
+  /* Header */
+  .navbar {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+  .navbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+  .navbar .brand .logo {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 1.1rem;
+  }
+  .navbar .meta { font-size: 0.85rem; opacity: 0.85; }
+
+  /* Banner aviso */
+  .unsaved-banner {
+    background: #fff7e6;
+    color: #92660a;
+    border-bottom: 1px solid #ffe0a3;
+    padding: 10px 24px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: none;
+  }
+  .unsaved-banner.show { display: block; }
+  .unsaved-banner .icon { color: #d99a00; margin-right: 6px; }
+
+  /* Layout */
+  .container {
+    max-width: 1200px;
+    margin: 32px auto;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+  }
+  @media (max-width: 960px) {
+    .container { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+
+  .card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card h2::before {
+    content: '';
+    width: 4px; height: 18px;
+    background: var(--primary);
+    border-radius: 2px;
+  }
+
+  /* Preview */
+  .preview-wrap {
+    position: relative;
+    background: #0f172a;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    display: grid;
+    place-items: center;
+    margin-bottom: 20px;
+  }
+  .preview-wrap video {
+    width: 100%; height: 100%;
+    object-fit: contain;
+  }
+  .preview-placeholder {
+    color: #94a3b8;
+    text-align: center;
+    padding: 20px;
+  }
+  .preview-placeholder .icon { font-size: 3rem; margin-bottom: 10px; opacity: 0.5; }
+
+  .rec-indicator {
+    position: absolute;
+    top: 16px; left: 16px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(8px);
+  }
+  .rec-indicator.active { display: flex; }
+  .rec-indicator .dot {
+    width: 10px; height: 10px;
+    background: var(--danger);
+    border-radius: 50%;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .timer {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: none;
+  }
+  .timer.active { display: block; }
+
+  /* Badges info */
+  .info-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid rgba(10,88,202,0.15);
+  }
+  .badge .icon { color: var(--primary); }
+
+  /* Buttons */
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(10, 88, 202, 0.3);
+  }
+  .btn-warning { background: var(--warning); color: #1f2937; }
+  .btn-warning:hover:not(:disabled) { background: #e0a800; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover:not(:disabled) { background: #bb2d3b; }
+  .btn-secondary {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover:not(:disabled) { background: #e9ecef; }
+  .btn .icon { font-size: 1rem; }
+
+  /* Recordings list */
+  .recordings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  .recording-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    transition: all 0.2s;
+  }
+  .recording-item:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow);
+  }
+  .recording-item .info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .recording-item .title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
+  .recording-item .meta-info {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .recording-item .size-badge {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .recording-item video {
+    width: 100%;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background: #000;
+  }
+  .recording-item .actions {
+    display: flex;
+    gap: 8px;
+  }
+  .recording-item .actions .btn {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.35; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--text);
+    color: white;
+    padding: 14px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    display: none;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    z-index: 1000;
+    animation: slideIn 0.3s;
+    max-width: 380px;
+  }
+  .toast.show { display: flex; }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ============================================
+     MODAL PERSONALIZADO DE SALIDA
+     ============================================ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+    animation: fadeIn 0.2s;
+  }
+  .modal-overlay.show { display: flex; }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 14px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+    animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .modal-header {
+    padding: 22px 24px 8px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .modal-header .modal-icon {
+    width: 48px; height: 48px;
+    background: #fff7e6;
+    color: #d99a00;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .modal-header h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+  .modal-header .modal-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .modal-body {
+    padding: 8px 24px 20px;
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  .modal-body p { margin-bottom: 10px; }
+  .modal-body .count-highlight {
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .modal-list {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 12px 0;
+    max-height: 140px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+  }
+  .modal-list .item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .modal-list .item:last-child { border-bottom: none; }
+  .modal-list .item .name {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 260px;
+  }
+  .modal-list .item .size {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+
+  .modal-footer {
+    padding: 16px 24px 22px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: #fafbfc;
+    border-top: 1px solid var(--border);
+  }
+  .modal-footer .btn { flex: 1; justify-content: center; min-width: 120px; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- SVG sprite -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+  <symbol id="i-video" viewBox="0 0 24 24">
+    <path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/>
+  </symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24">
+    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/>
+  </symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24">
+    <path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/>
+  </symbol>
+  <symbol id="i-play" viewBox="0 0 24 24">
+    <path d="M8 5v14l11-7L8 5z"/>
+  </symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24">
+    <path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/>
+  </symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24">
+    <path d="M6 6h12v12H6z"/>
+  </symbol>
+  <symbol id="i-download" viewBox="0 0 24 24">
+    <path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M5 20h14v-2H5v2z"/>
+  </symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24">
+    <path d="M9 3v1H4v2h16V4h-5V3H9zm-3 6v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9H6zm3 2h2v8H9v-8zm4 0h2v8h-2v-8z"/>
+  </symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24">
+    <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z"/>
+  </symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24">
+    <path d="M21 6h-7.59l2.3-2.3-1.42-1.4L11.6 5 8.71 2.3 7.29 3.7 9.59 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm0 13H3V8h18v11z"/>
+  </symbol>
+  <symbol id="i-warning" viewBox="0 0 24 24">
+    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+  </symbol>
+</svg>
+
+<nav class="navbar">
+  <div class="brand">
+    <div class="logo"><span class="icon"><svg><use href="#i-video"/></svg></span></div>
+    <div>
+      Grabadora de pantalla
+      <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">VersionLibre</div>
+    </div>
+  </div>
+  <div class="meta">Local 100% </div>
+</nav>
+
+<!-- Banner de grabaciones sin guardar -->
+<div id="unsavedBanner" class="unsaved-banner">
+  <span class="icon"><svg><use href="#i-warning"/></svg></span>
+  Tienes <strong id="unsavedCount">0</strong> grabación(es) sin descargar. Si recargas o cierras la página, se perderán.
+</div>
+
+<div class="container">
+  <div>
+    <div class="card">
+      <h2>Grabación en vivo</h2>
+
+      <div class="preview-wrap">
+        <div id="placeholder" class="preview-placeholder">
+          <div class="icon"><svg><use href="#i-tv"/></svg></div>
+          <div>La vista previa aparecerá aquí</div>
+          <div style="font-size: 0.85rem; margin-top: 6px;">Pulsa "Iniciar" y acepta los permisos del navegador</div>
+        </div>
+        <video id="preview" autoplay muted playsinline style="display:none;"></video>
+        <div id="recIndicator" class="rec-indicator">
+          <span class="dot"></span>
+          <span>REC</span>
+        </div>
+        <div id="timer" class="timer">00:00:00</div>
+      </div>
+
+      <div class="info-badges">
+        <span class="badge">
+          <span class="icon"><svg><use href="#i-tv"/></svg></span>
+          Pantalla / Ventana / Pestaña
+        </span>
+        <span class="badge">
+          <span class="icon"><svg><use href="#i-speaker"/></svg></span>
+          Audio del sistema
+        </span>
+        <span class="badge">
+          <span class="icon"><svg><use href="#i-mic"/></svg></span>
+          Micrófono
+        </span>
+      </div>
+
+      <div class="controls">
+        <button id="btnStart" class="btn btn-primary">
+          <span class="icon"><svg><use href="#i-play"/></svg></span>
+          Iniciar grabación
+        </button>
+        <button id="btnPause" class="btn btn-warning" disabled>
+          <span class="icon"><svg><use href="#i-pause"/></svg></span>
+          Pausar
+        </button>
+        <button id="btnResume" class="btn btn-primary" disabled style="display:none;">
+          <span class="icon"><svg><use href="#i-play"/></svg></span>
+          Continuar
+        </button>
+        <button id="btnStop" class="btn btn-danger" disabled>
+          <span class="icon"><svg><use href="#i-stop"/></svg></span>
+          Detener
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Grabaciones</h2>
+      <div id="recordingsList" class="recordings-list">
+        <div class="empty-state">
+          <div class="icon"><svg><use href="#i-folder"/></svg></div>
+          <p>Aún no hay grabaciones.<br>Comienza a grabar para ver tus archivos aquí.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © SofwareLIbre 2026
+</footer>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- ============================================
+     MODAL PERSONALIZADO DE SALIDA
+     ============================================ -->
+<div id="exitModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="exitModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon"><span class="icon"><svg><use href="#i-warning"/></svg></span></div>
+      <div>
+        <h3 id="exitModalTitle">¿Salir sin guardar?</h3>
+        <div class="modal-sub">Las grabaciones no descargadas se perderán</div>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <p>
+        Tienes <span class="count-highlight" id="exitModalCount">0</span>
+        grabación(es) que aún no has descargado. Si sales o recargas la página,
+        <strong>se eliminarán permanentemente</strong>.
+      </p>
+
+      <div class="modal-list" id="exitModalList"></div>
+
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        Te recomendamos descargarlas antes de continuar.
+      </p>
+    </div>
+
+    <div class="modal-footer">
+      <button id="btnModalCancel" class="btn btn-secondary">
+        Cancelar
+      </button>
+      <button id="btnModalExit" class="btn btn-danger">
+        <span class="icon"><svg><use href="#i-stop"/></svg></span>
+        Salir sin guardar
+      </button>
+      <button id="btnModalDownload" class="btn btn-primary">
+        <span class="icon"><svg><use href="#i-download"/></svg></span>
+        Descargar todas y salir
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ============================================================
+  // DOM refs
+  // ============================================================
+  const preview = document.getElementById('preview');
+  const placeholder = document.getElementById('placeholder');
+  const recIndicator = document.getElementById('recIndicator');
+  const timerEl = document.getElementById('timer');
+  const btnStart = document.getElementById('btnStart');
+  const btnPause = document.getElementById('btnPause');
+  const btnResume = document.getElementById('btnResume');
+  const btnStop = document.getElementById('btnStop');
+  const recordingsList = document.getElementById('recordingsList');
+  const toast = document.getElementById('toast');
+  const unsavedBanner = document.getElementById('unsavedBanner');
+  const unsavedCount = document.getElementById('unsavedCount');
+
+  // Modal refs
+  const exitModal = document.getElementById('exitModal');
+  const exitModalCount = document.getElementById('exitModalCount');
+  const exitModalList = document.getElementById('exitModalList');
+  const btnModalCancel = document.getElementById('btnModalCancel');
+  const btnModalExit = document.getElementById('btnModalExit');
+  const btnModalDownload = document.getElementById('btnModalDownload');
+
+  // ============================================================
+  // Estado
+  // ============================================================
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let stream = null;
+  let micStream = null;
+  let startTime = 0;
+  let pausedTime = 0;
+  let pauseStart = 0;
+  let timerInterval = null;
+  let recordings = [];
+  let stopping = false;
+  let currentMimeType = '';
+
+  // Controla el flujo de salida
+  let accionPendiente = null;   // 'reload' | 'close' | null
+  let permitirSalida = false;   // bypass del beforeunload cuando el usuario confirma
+
+  // ============================================================
+  // Toast
+  // ============================================================
+  function showToast(msg, duration = 3000) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  // ============================================================
+  // Timer
+  // ============================================================
+  function formatTime(ms) {
+    const s = Math.floor(ms / 1000);
+    const h = String(Math.floor(s / 3600)).padStart(2, '0');
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+    const sec = String(s % 60).padStart(2, '0');
+    return `${h}:${m}:${sec}`;
+  }
+
+  function startTimer() {
+    startTime = Date.now();
+    pausedTime = 0;
+    timerEl.textContent = '00:00:00';
+    timerInterval = setInterval(() => {
+      timerEl.textContent = formatTime(Date.now() - startTime - pausedTime);
+    }, 1000);
+  }
+  function pauseTimer() { pauseStart = Date.now(); }
+  function resumeTimer() { if (pauseStart) { pausedTime += Date.now() - pauseStart; pauseStart = 0; } }
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerEl.textContent = '00:00:00';
+  }
+
+  // ============================================================
+  // Utils
+  // ============================================================
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+  }
+
+  // ============================================================
+  // Indicador / banner de grabaciones sin guardar
+  // ============================================================
+  function actualizarAvisoSalida() {
+    const hay = recordings.length > 0;
+
+    // Título de la pestaña
+    document.title = hay
+      ? `● Grabadora de pantalla— ${recordings.length} sin guardar`
+      : 'Grabadora de pantalla ';
+
+    // Banner superior
+    if (hay) {
+      unsavedBanner.classList.add('show');
+      unsavedCount.textContent = recordings.length;
+    } else {
+      unsavedBanner.classList.remove('show');
+    }
+  }
+
+  // ============================================================
+  // Detener de forma segura
+  // ============================================================
+  function stopRecording(reason = 'user') {
+    if (stopping) return;
+    stopping = true;
+
+    try {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try { mediaRecorder.requestData(); } catch (_) {}
+        mediaRecorder.stop();
+      } else {
+        cleanup();
+      }
+    } catch (err) {
+      console.error('[stopRecording]', err);
+      cleanup();
+    }
+
+    setTimeout(() => {
+      if (stopping) {
+        console.warn('[stopRecording] timeout, forzando cleanup');
+        cleanup();
+      }
+    }, 2000);
+  }
+
+  // ============================================================
+  // Iniciar grabación
+  // ============================================================
+  btnStart.addEventListener('click', async () => {
+    btnStart.disabled = true;
+    stopping = false;
+
+    try {
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true
+      });
+
+      const tracks = [...displayStream.getVideoTracks()];
+
+      const systemAudioTracks = displayStream.getAudioTracks();
+      if (systemAudioTracks.length > 0) {
+        tracks.push(...systemAudioTracks);
+      } else {
+        showToast('No se compartió audio del sistema (opcional en algunos SO)');
+      }
+
+      // Micrófono
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true }
+        });
+        tracks.push(...micStream.getAudioTracks());
+      } catch (e) {
+        console.warn('Micrófono no disponible:', e);
+        showToast('Micrófono no autorizado, continuando sin él');
+        micStream = null;
+      }
+
+      stream = new MediaStream(tracks);
+      preview.srcObject = stream;
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
+
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.addEventListener('ended', () => stopRecording('track-ended'));
+      }
+
+      const mimeTypes = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm',
+        'video/mp4'
+      ];
+      currentMimeType = mimeTypes.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+
+      recordedChunks = [];
+
+      const options = { videoBitsPerSecond: 5_000_000 };
+      if (currentMimeType) options.mimeType = currentMimeType;
+
+      mediaRecorder = new MediaRecorder(stream, options);
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onerror = (e) => {
+        console.error('[MediaRecorder error]', e.error || e);
+        showToast('Error del grabador: ' + (e.error?.name || 'desconocido'));
+        stopRecording('error');
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: currentMimeType || 'video/webm' });
+        if (blob.size > 0) addRecording(blob);
+        else showToast('La grabación quedó vacía');
+        cleanup();
+      };
+
+      mediaRecorder.start(1000);
+      startTimer();
+
+      recIndicator.classList.add('active');
+      timerEl.classList.add('active');
+
+      btnPause.disabled = false;
+      btnStop.disabled = false;
+
+      showToast('Grabación iniciada');
+    } catch (err) {
+      console.error(err);
+      if (err.name === 'NotAllowedError') showToast('Permiso denegado por el usuario');
+      else showToast('Error: ' + err.message);
+      cleanup();
+    }
+  });
+
+  // ============================================================
+  // Pause / Resume / Stop
+  // ============================================================
+  btnPause.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      try {
+        mediaRecorder.pause();
+        pauseTimer();
+        btnPause.style.display = 'none';
+        btnResume.style.display = 'inline-flex';
+        btnResume.disabled = false;
+        showToast('Grabación pausada');
+      } catch (e) { console.warn('pause falló:', e); }
+    }
+  });
+
+  btnResume.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state === 'paused') {
+      try {
+        mediaRecorder.resume();
+        resumeTimer();
+        btnResume.style.display = 'none';
+        btnPause.style.display = 'inline-flex';
+        btnPause.disabled = false;
+        showToast('Grabación continuada');
+      } catch (e) { console.warn('resume falló:', e); }
+    }
+  });
+
+  btnStop.addEventListener('click', () => stopRecording('user'));
+
+  // ============================================================
+  // Cleanup
+  // ============================================================
+  function cleanup() {
+    stopping = false;
+
+    if (stream) {
+      stream.getTracks().forEach(t => { try { t.stop(); } catch (_) {} });
+      stream = null;
+    }
+    if (micStream) {
+      micStream.getTracks().forEach(t => { try { t.stop(); } catch (_) {} });
+      micStream = null;
+    }
+
+    preview.srcObject = null;
+    preview.style.display = 'none';
+    placeholder.style.display = 'block';
+    recIndicator.classList.remove('active');
+    timerEl.classList.remove('active');
+    stopTimer();
+
+    btnStart.disabled = false;
+    btnPause.disabled = true;
+    btnPause.style.display = 'inline-flex';
+    btnResume.style.display = 'none';
+    btnResume.disabled = true;
+    btnStop.disabled = true;
+
+    mediaRecorder = null;
+    recordedChunks = [];
+    pauseStart = 0;
+    pausedTime = 0;
+  }
+
+  // ============================================================
+  // Lista de grabaciones
+  // ============================================================
+  function addRecording(blob) {
+    const rec = {
+      id: Date.now(),
+      blob,
+      url: URL.createObjectURL(blob),
+      name: `Grabacion_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.webm`,
+      date: new Date(),
+      size: blob.size
+    };
+    recordings.unshift(rec);
+    renderRecordings();
+    showToast('Grabación guardada (' + formatSize(blob.size) + ')');
+  }
+
+  function renderRecordings() {
+    actualizarAvisoSalida();
+
+    if (recordings.length === 0) {
+      recordingsList.innerHTML = `
+        <div class="empty-state">
+          <div class="icon"><svg><use href="#i-folder"/></svg></div>
+          <p>Aún no hay grabaciones.<br>Comienza a grabar para ver tus archivos aquí.</p>
+        </div>`;
+      return;
+    }
+
+    recordingsList.innerHTML = recordings.map(r => `
+      <div class="recording-item" data-id="${r.id}">
+        <div class="info">
+          <div>
+            <div class="title">${r.name}</div>
+            <div class="meta-info">${r.date.toLocaleString('es-ES')}</div>
+          </div>
+          <span class="size-badge">${formatSize(r.size)}</span>
+        </div>
+        <video src="${r.url}" controls></video>
+        <div class="actions">
+          <button class="btn btn-primary btn-download" data-id="${r.id}">
+            <span class="icon"><svg><use href="#i-download"/></svg></span>
+            Descargar
+          </button>
+          <button class="btn btn-danger btn-delete" data-id="${r.id}">
+            <span class="icon"><svg><use href="#i-trash"/></svg></span>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    recordingsList.querySelectorAll('.btn-download').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rec = recordings.find(x => x.id == btn.dataset.id);
+        if (!rec) return;
+        const a = document.createElement('a');
+        a.href = rec.url;
+        a.download = rec.name;
+        a.click();
+      });
+    });
+
+    recordingsList.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const rec = recordings.find(x => x.id == id);
+        if (rec) URL.revokeObjectURL(rec.url);
+        recordings = recordings.filter(x => x.id != id);
+        renderRecordings();
+        showToast('Grabación eliminada');
+      });
+    });
+  }
+
+  // ============================================================
+  // Descargar todas las grabaciones
+  // ============================================================
+  async function descargarTodas() {
+    for (const rec of recordings) {
+      const a = document.createElement('a');
+      a.href = rec.url;
+      a.download = rec.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Pequeña pausa para que el navegador procese las descargas
+      await new Promise(r => setTimeout(r, 250));
+    }
+  }
+
+  // ============================================================
+  // MODAL PERSONALIZADO DE SALIDA
+  // ============================================================
+  function abrirModalSalida(accion) {
+    accionPendiente = accion;
+
+    exitModalCount.textContent = recordings.length;
+
+    exitModalList.innerHTML = recordings.map(r => `
+      <div class="item">
+        <span class="name">${r.name}</span>
+        <span class="size">${formatSize(r.size)}</span>
+      </div>
+    `).join('');
+
+    exitModal.classList.add('show');
+  }
+
+  function cerrarModalSalida() {
+    exitModal.classList.remove('show');
+    accionPendiente = null;
+  }
+
+  function ejecutarSalida() {
+    permitirSalida = true;
+
+    if (accionPendiente === 'reload') {
+      location.reload();
+    } else if (accionPendiente === 'close') {
+      // Intentar cerrar; si el navegador no lo permite, se queda
+      window.close();
+      // Fallback: si no se cierra, recargamos
+      setTimeout(() => {
+        location.reload();
+      }, 300);
+    }
+
+    cerrarModalSalida();
+  }
+
+  btnModalCancel.addEventListener('click', cerrarModalSalida);
+
+  btnModalExit.addEventListener('click', ejecutarSalida);
+
+  btnModalDownload.addEventListener('click', async () => {
+    btnModalDownload.disabled = true;
+    btnModalDownload.textContent = 'Descargando...';
+
+    await descargarTodas();
+
+    // Marcamos como "descargadas" -> ya no hay riesgo
+    // (no vaciamos la lista, pero desactivamos el aviso)
+    recordings.forEach(r => { r.descargada = true; });
+    actualizarAvisoSalida();
+
+    btnModalDownload.disabled = false;
+    btnModalDownload.innerHTML = `
+      <span class="icon"><svg><use href="#i-download"/></svg></span>
+      Descargar todas y salir
+    `;
+
+    // Salir tras un pequeño delay para que arranquen las descargas
+    setTimeout(ejecutarSalida, 400);
+  });
+
+  // Cerrar modal con Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && exitModal.classList.contains('show')) {
+      cerrarModalSalida();
+    }
+  });
+
+  // Cerrar modal al hacer clic fuera
+  exitModal.addEventListener('click', (e) => {
+    if (e.target === exitModal) cerrarModalSalida();
+  });
+
+  // ============================================================
+  // INTERCEPTAR RECARGA (F5, Ctrl+R, Cmd+R)
+  // ============================================================
+  document.addEventListener('keydown', (e) => {
+    if (recordings.length === 0) return;
+
+    const esRecarga =
+      e.key === 'F5' ||
+      ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r');
+
+    if (esRecarga) {
+      e.preventDefault();
+      e.stopPropagation();
+      abrirModalSalida('reload');
+    }
+  }, true); // capture:true para interceptar antes que el navegador
+
+  // ============================================================
+  // INTERCEPTAR CIERRE / NAVEGACIÓN (beforeunload)
+  // ============================================================
+  window.addEventListener('beforeunload', (e) => {
+    if (permitirSalida) return;
+    if (recordings.length === 0) return;
+
+    // Fallback nativo del navegador (no se puede personalizar).
+    // Nuestro modal aparece en la mayoría de casos antes de llegar aquí.
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  });
+
+  // ============================================================
+  // Soporte de navegador
+  // ============================================================
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    document.body.innerHTML = `
+      <div style="padding:60px;text-align:center;font-family:Inter,sans-serif;">
+        <h1 style="color:#dc3545;">Navegador no compatible</h1>
+        <p style="margin-top:16px;color:#6b7280;">Tu navegador no soporta la API de captura de pantalla.<br>Usa Chrome, Edge o Firefox actualizados.</p>
+      </div>`;
+  }
+})();
+</script>
+</body>
+</html>
